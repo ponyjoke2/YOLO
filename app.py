@@ -82,10 +82,10 @@ def detect_post5():  # put application's code here
     print("===========================================================")
 
     try:
-        image_array = results[0].plot()
-        dst_image_base64string = arrayToBase64(image_array)
-        dst_image = base64ToOpencv(dst_image_base64string)
-        cv2.imshow("dst_image",dst_image)
+        # image_array = results[0].plot()
+        # dst_image_base64string = arrayToBase64(image_array)
+        # dst_image = base64ToOpencv(dst_image_base64string)
+        # cv2.imshow("dst_image",dst_image)
 
         array=results[0].boxes.data.cpu().numpy().tolist()
         print(results[0].boxes.data)
@@ -114,8 +114,8 @@ def detect_post5():  # put application's code here
             resized_img = cv2.resize(crop_img, (hat_resize_x, hat_resize_y), interpolation=cv2.INTER_LINEAR)
             image_base64string = opencvToBase64(resized_img)
 
-            image = base64ToOpencv(image_base64string)
-            cv2.imshow("image"+str(i),image)
+            # image = base64ToOpencv(image_base64string)
+            # cv2.imshow("image"+str(i),image)
 
             temp_message.append(image_base64string)
 
@@ -154,10 +154,10 @@ def detect_post6():  # put application's code here
     print("===========================================================")
 
     try:
-        image_array = results[0].plot()
-        dst_image_base64string = arrayToBase64(image_array)
-        dst_image = base64ToOpencv(dst_image_base64string)
-        cv2.imshow("dst_image",dst_image)
+        # image_array = results[0].plot()
+        # dst_image_base64string = arrayToBase64(image_array)
+        # dst_image = base64ToOpencv(dst_image_base64string)
+        # cv2.imshow("dst_image",dst_image)
 
         array=results[0].boxes.data.cpu().numpy().tolist()
         print(results[0].boxes.data)
@@ -187,8 +187,8 @@ def detect_post6():  # put application's code here
             resized_img = cv2.resize(crop_img, (vest_resize_x, vest_resize_y), interpolation=cv2.INTER_LINEAR)
             image_base64string = opencvToBase64(resized_img)
 
-            image = base64ToOpencv(image_base64string)
-            cv2.imshow("image"+str(i),image)
+            # image = base64ToOpencv(image_base64string)
+            # cv2.imshow("image"+str(i),image)
 
             temp_message.append(image_base64string)
 
