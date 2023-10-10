@@ -9,11 +9,26 @@ from PIL import Image
 from io import BytesIO
 import urllib.request
 import time
+from flasgger import Swagger
+
+
+
 
 # 做了一个安全帽和安全服的目标检测算法后端项目，使用python语言开发，框架使用的是flask。算法使用的是YOLOv8。一共做了两个接口，分别对应安全帽和安全服的检测。
 # 接收的参数为图片的url，返回告警图片，没带安全帽或没穿安全服的base64截图。
 
 app = Flask(__name__)
+Swagger(app)
+
+app.config['SWAGGER'] = {
+    'title': 'My API',
+    'description': 'API for my data',
+    'version': '1.0.0',
+    'license': {
+        'name': 'Apache 2.0',
+        'url': 'http://www.apache.org/licenses/LICENSE-2.0.html'
+    }
+}
 
 # 配置日志级别
 app.logger.setLevel(logging.DEBUG)
@@ -27,10 +42,10 @@ app.logger.addHandler(handler)
 model1 = YOLO("yolov8/best_hat_20230920.pt")
 model2 = YOLO("yolov8/best_vest_230919.pt")
 hat_ratio = 0.1
-hat_resize_x = 160
-hat_resize_y = 160
+hat_resize_x = 200
+hat_resize_y = 200
 vest_ratio = 0.1
-vest_resize_x = 160
+vest_resize_x = 200
 vest_resize_y = 200
 
 
@@ -73,16 +88,25 @@ def readImageFromUrl(url):
     return img
 
 def arrayToOpencv(image_array):
-    pil_img = Image.fromarray(image_array)
-    np_array=np.array(pil_img)
-    mat=cv2.cvtColor(np_array[..., ::-1],cv2.COLOR_RGB2BGR)  # RGB转BGR？？[..., ::-1]
+    np_array=np.array(image_array[..., ::-1])
+    mat=cv2.cvtColor(np_array,cv2.COLOR_RGB2BGR)  # RGB转BGR？？[..., ::-1]
     return mat
 
 
 
-
-@app.route('/')
+@app.route('/hello')
 def hello_world():  # put application's code here
+    """
+            This is an example of hello world
+            ---
+            responses:
+              200:
+                description: A simple hello world response
+                content:
+                  text/plain:
+                    schema:
+                      type: string
+    """
     return 'Hello World!'
 
 
@@ -100,15 +124,17 @@ def detect_post5():  # put application's code here
         request_data_dict=request.get_json(silent=True)
 
         imageUrl = request_data_dict["imageUrl"]
+        print("图片url:" + imageUrl)
         # imageUrl = "http://" + request.remote_addr + imageUrl
         img = readImageFromUrl(imageUrl)
-        print("图片url:"+imageUrl)
+
 
         importantLowThreshold = int(request_data_dict["importantLowThreshold"])
         urgentLowThreshold = int(request_data_dict["urgentLowThreshold"])
         alarmThreshold = int(request_data_dict["alarmThreshold"])
-
+        print(request_data_dict)
         if "src_x1" in request_data_dict and "src_y1" in request_data_dict and "src_x2" in request_data_dict and "src_y2" in request_data_dict:
+            print("画框截图")
             src_x1 = int(request_data_dict["src_x1"])
             src_y1 = int(request_data_dict["src_y1"])
             src_x2 = int(request_data_dict["src_x2"])
@@ -124,10 +150,10 @@ def detect_post5():  # put application's code here
 
 
     try:
-        dst_image_array = results[0].plot()
-        dst_image=arrayToOpencv(dst_image_array)
-        dst_image=cv2.resize(dst_image,(700,700))
-        cv2.imshow("dst_image", dst_image)
+        # dst_image_array = results[0].plot()
+        # dst_image=arrayToOpencv(dst_image_array)
+        # dst_image=cv2.resize(dst_image,(700,700))
+        # cv2.imshow("dst_image", dst_image)
 
         array = results[0].boxes.data.cpu().numpy().tolist()
         print("检测数据:"+str(results[0].boxes.data))
@@ -157,20 +183,20 @@ def detect_post5():  # put application's code here
             resized_img = cv2.resize(crop_img, (hat_resize_x, hat_resize_y), interpolation=cv2.INTER_LINEAR)
             image_base64string = opencvToBase64(resized_img)
 
-            image = base64ToOpencv(image_base64string)
-            cv2.imshow("image" + str(i), image)
+            # image = base64ToOpencv(image_base64string)
+            # cv2.imshow("image" + str(i), image)
 
             temp_message.append(image_base64string)
 
         message["boxes"] = temp_message
         if len(list) == 0:
-            message["alarmType"] = "none"
+            message["alarmType"] = "无告警"
         elif 0 < len(list) <= importantLowThreshold:
-            message["alarmType"] = "normal"
+            message["alarmType"] = "一般"
         elif importantLowThreshold < len(list) <= urgentLowThreshold:
-            message["alarmType"] = "important"
+            message["alarmType"] = "重要"
         elif len(list) > urgentLowThreshold:
-            message["alarmType"] = "urgent"
+            message["alarmType"] = "紧急"
         # message["dst_image"]=dst_image_base64string
         message["message"] = "success"
 
@@ -181,7 +207,7 @@ def detect_post5():  # put application's code here
     end_time = time.time()
 
     app.logger.debug("总运行时间："+str(end_time - start_time))
-    cv2.waitKey()
+    #cv2.waitKey()
     return message  # 响应json
 
 
@@ -199,15 +225,16 @@ def detect_post6():  # put application's code here
         request_data_dict = request.get_json(silent=True)
 
         imageUrl = request_data_dict["imageUrl"]
+        print("图片url:" + imageUrl)
         # imageUrl = "http://" + request.remote_addr + imageUrl
         img = readImageFromUrl(imageUrl)
-        print("图片url:" + imageUrl)
 
         importantLowThreshold = int(request_data_dict["importantLowThreshold"])
         urgentLowThreshold = int(request_data_dict["urgentLowThreshold"])
         alarmThreshold = int(request_data_dict["alarmThreshold"])
-
+        print(request_data_dict)
         if "src_x1" in request_data_dict and "src_y1" in request_data_dict and "src_x2" in request_data_dict and "src_y2" in request_data_dict:
+            print("画框截图")
             src_x1 = int(request_data_dict["src_x1"])
             src_y1 = int(request_data_dict["src_y1"])
             src_x2 = int(request_data_dict["src_x2"])
@@ -223,10 +250,10 @@ def detect_post6():  # put application's code here
 
 
     try:
-        dst_image_array = results[0].plot()
-        dst_image=arrayToOpencv(dst_image_array)
-        dst_image=cv2.resize(dst_image,(700,700))
-        cv2.imshow("dst_image", dst_image)
+        # dst_image_array = results[0].plot()
+        # dst_image=arrayToOpencv(dst_image_array)
+        # dst_image=cv2.resize(dst_image,(700,700))
+        # cv2.imshow("dst_image", dst_image)
 
         array = results[0].boxes.data.cpu().numpy().tolist()
         print("检测数据:"+str(results[0].boxes.data))
@@ -257,20 +284,20 @@ def detect_post6():  # put application's code here
             resized_img = cv2.resize(crop_img, (vest_resize_x, vest_resize_y), interpolation=cv2.INTER_LINEAR)
             image_base64string = opencvToBase64(resized_img)
 
-            image = base64ToOpencv(image_base64string)
-            cv2.imshow("image" + str(i), image)
+            # image = base64ToOpencv(image_base64string)
+            # cv2.imshow("image" + str(i), image)
 
             temp_message.append(image_base64string)
 
         message["boxes"] = temp_message
         if len(list) == 0:
-            message["alarmType"] = "none"
+            message["alarmType"] = "无告警"
         elif 0 < len(list) <= importantLowThreshold:
-            message["alarmType"] = "normal"
+            message["alarmType"] = "一般"
         elif importantLowThreshold < len(list) <= urgentLowThreshold:
-            message["alarmType"] = "important"
+            message["alarmType"] = "重要"
         elif len(list) > urgentLowThreshold:
-            message["alarmType"] = "urgent"
+            message["alarmType"] = "紧急"
 
         # message["dst_image"]=dst_image_base64string
         message["message"] = "success"
@@ -281,8 +308,8 @@ def detect_post6():  # put application's code here
         return message
     end_time = time.time()
     app.logger.debug("总运行时间："+ str(end_time - start_time))
-    cv2.waitKey()
+    #cv2.waitKey()
     return message  # 响应json
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port='5000')#参数不生效，原因未知
+    app.run(host='0.0.0.0',port='5000') #参数不生效，原因未知 --host=0.0.0.0 --port=5000
