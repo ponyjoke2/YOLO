@@ -12,8 +12,6 @@ import time
 from flasgger import Swagger
 
 
-
-
 # 做了一个安全帽和安全服的目标检测算法后端项目，使用python语言开发，框架使用的是flask。算法使用的是YOLOv8。一共做了两个接口，分别对应安全帽和安全服的检测。
 # 接收的参数为图片的url，返回告警图片，没带安全帽或没穿安全服的base64截图。
 
@@ -113,9 +111,27 @@ def hello_world():  # put application's code here
 # 算法一，安全帽(接收url,返回检测框截图)
 @app.route('/detect_post5', methods=['POST'])  # POST请求接受参数
 def detect_post5():  # put application's code here
+    '''
+    tags:
+        - 安全帽
+    requestBody:
+        description: body
+        required: true
+        content:
+            x-www-form-urlencoded:
+            schema:
+                example: {"username":TOKEN,"password":PASSWORD,"repassword":PASSWORD,"email":EMAIL,"csrf_token":TOKEN}
+    responses:
+        200:
+            description: index test
+            content:
+                raw/html:
+                    schema:
+                        example: <!doctype html><html><head><meta charset="UTF-8" /><title>phpwind 9.0 - Powered by phpwind</title>
+    '''
     start_time = time.time()
     print("********************************安全帽检测算法********************************")
-    message = {"boxes": "", "message": "", "alarmType": ""}
+    message = {"code":200,"boxes": "", "message": "", "alarmType": ""}
 
     # 源ip
     print("源ip:"+str(request.remote_addr))
@@ -152,7 +168,7 @@ def detect_post5():  # put application's code here
     try:
         # dst_image_array = results[0].plot()
         # dst_image=arrayToOpencv(dst_image_array)
-        # dst_image=cv2.resize(dst_image,(700,700))
+        # #dst_image=cv2.resize(dst_image,(700,700))
         # cv2.imshow("dst_image", dst_image)
 
         array = results[0].boxes.data.cpu().numpy().tolist()
@@ -203,11 +219,12 @@ def detect_post5():  # put application's code here
     except Exception as e:
         app.logger.debug("检测后数据处理异常:"+str(e))
         message["message"] = str(e)
+        message["code"]= 500
         return message
     end_time = time.time()
 
     app.logger.debug("总运行时间："+str(end_time - start_time))
-    #cv2.waitKey()
+    # cv2.waitKey()
     return message  # 响应json
 
 
@@ -216,7 +233,7 @@ def detect_post5():  # put application's code here
 def detect_post6():  # put application's code here
     start_time = time.time()
     print("********************************安全服检测算法********************************")
-    message = {"boxes": "", "message": "", "alarmType": ""}
+    message = {"code":200,"boxes": "", "message": "", "alarmType": ""}
 
     # 源ip
     print("源ip:"+str(request.remote_addr))
@@ -252,7 +269,7 @@ def detect_post6():  # put application's code here
     try:
         # dst_image_array = results[0].plot()
         # dst_image=arrayToOpencv(dst_image_array)
-        # dst_image=cv2.resize(dst_image,(700,700))
+        # #dst_image=cv2.resize(dst_image,(700,700))
         # cv2.imshow("dst_image", dst_image)
 
         array = results[0].boxes.data.cpu().numpy().tolist()
@@ -305,10 +322,11 @@ def detect_post6():  # put application's code here
     except Exception as e:
         app.logger.info("检测后数据处理异常:"+str(e))
         message["message"] = str(e)
+        message["code"] = 500
         return message
     end_time = time.time()
     app.logger.debug("总运行时间："+ str(end_time - start_time))
-    #cv2.waitKey()
+    # cv2.waitKey()
     return message  # 响应json
 
 if __name__ == '__main__':
